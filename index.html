@@ -181,7 +181,7 @@
         <tbody>
             <!-- Data will be injected here by JavaScript -->
         </tbody>
-        <span> Total guests: <b id="total"></b></span>
+        <span id="count" style="display: none;"> Total guests: <b id="total"></b></span>
     </table>
     <script>
         if (!globalThis.sc) {
@@ -215,7 +215,9 @@
             });
         } else {
             document.getElementById("main").style.display = "none";
-            document.getElementById("table").style.display = "table"
+            document.getElementById("table").style.display = "table";
+            document.getElementById("count").style.display = "inline";
+
             const total = document.getElementById("total");
             const tableBody = document.getElementById('table').getElementsByTagName('tbody')[0];
             db.collection('rsvps').get().then(snapshot => {
@@ -234,7 +236,7 @@
 
                     const emailCell = row.insertCell(2);
                     emailCell.textContent = item.email || 'N/A'; // Replace 'email' with your field name
-                    
+
                     const msgCell = row.insertCell(3);
                     msgCell.textContent = item.message || 'N/A'; // Replace 'age' with your field name
                     total.innerText = guests;
