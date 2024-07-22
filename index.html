@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RSVP: House Warming</title>
-    <link rel="icon" type="image/x-icon" href="https://gopal-y.github.io/housewarming/house_warming.jpg"/>
+    <link rel="icon" type="image/x-icon" href="https://gopal-y.github.io/housewarming/house_warming.jpg" />
     <meta property="og:title" content="RSVP: House Warming">
     <meta property="og:description" content="Please respond Yes/No">
     <meta property="og:image" content="https://gopal-y.github.io/housewarming/house_warming.jpg">
@@ -15,9 +15,233 @@
     <meta name="twitter:description" content="Please respond Yes/No">
     <meta name="twitter:image" content="https://gopal-y.github.io/housewarming/house_warming.jpg">
 </head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        width: 80%;
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1,
+    h2 {
+        text-align: center;
+        color: #333;
+    }
+
+    form {
+        margin-top: 20px;
+    }
+
+    label,
+    input,
+    textarea {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    input[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #45a049;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid black;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        text-align: left;
+    }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+
+<script>
+    function signInWithGoogle() {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider)
+            .then(function (result) {
+                // This gives you a Google Access Token
+                var token = result.credential.accessToken;
+                // The signed-in user info
+                var user = result.user;
+                // Redirect or perform actions after sign-in
+                handleSignedInUser(user);
+            })
+            .catch(function (error) {
+                // Handle errors here
+                var errorCode = error.code;
+                var errorMessage = error.message;
+                console.error(errorCode, errorMessage);
+                alert("Failed to sign in with Google. Please try again.");
+            });
+    }
+
+    // Function to handle actions after sign-in
+    function handleSignedInUser(user) {
+        // Example: Store user data in Firestore
+        var userData = {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL
+        };
+
+        // Add the user data to Firestore
+        firebase.firestore().collection('users').doc(user.uid).set(userData)
+            .then(function () {
+                console.log("User data successfully written to Firestore!");
+                // Optionally redirect to another page or show a success message
+            })
+            .catch(function (error) {
+                console.error("Error writing user data: ", error);
+                alert("Failed to save user data. Please try again.");
+            });
+    }
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyA2nVr6OaVgECcn274KNj0oOfgoUZ0uzvw",
+        authDomain: "rsvp-2c413.firebaseapp.com",
+        projectId: "rsvp-2c413",
+        storageBucket: "rsvp-2c413.appspot.com",
+        messagingSenderId: "143773229144",
+        appId: "1:143773229144:web:50f2b27709da7f0c85ea2d"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    // Reference to Firestore
+    const db = firebase.firestore();
+
+    // Form submission handler
+    globalThis.sc = (new URLSearchParams(window.location.search)).get("showCount") != null;
+</script>
 
 <body>
+    <div id="main" class="container">
+        <h1>Housewarming Party RSVP</h1>
+        <img width="100%" height="100%" src="house_warming.jpg" alt="house_warming" role="img" loading="lazy" />
+        <p>Please RSVP by filling out the form below:</p>
+        <form id="rsvpForm">
+            <label for="name">Your Name:</label>
+            <input type="text" id="name" name="name" required>
 
+            <label for="email">Your Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="guests">Number of Guests (including yourself):</label>
+            <input type="number" id="guests" name="guests" min="1" required>
+
+            <label for="message">Message (optional):</label>
+            <textarea id="message" name="message" rows="4"></textarea>
+
+            <input type="submit" value="RSVP">
+        </form>
+    </div>
+    <table id="table">
+        <thead>
+            <tr>
+                <!-- Define table headers here -->
+                <th>Name</th>
+                <th>Guests</th>
+                <th>Email</th>
+                <th>Messages</th>
+                <!-- Add more headers as per your data -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Data will be injected here by JavaScript -->
+        </tbody>
+    </table>
+    <span> Total guests: <b id="total"></b></span>
+    <script>
+        if (!globalThis.sc) {
+            document.getElementById('rsvpForm').addEventListener('submit', function (event) {
+                event.preventDefault(); // Prevent default form submission
+
+                // Get form values
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const guests = parseInt(document.getElementById('guests').value);
+                const message = document.getElementById('message').value;
+
+                // Add data to Firestore
+                db.collection('rsvps').add({
+                    name: name,
+                    email: email,
+                    guests: guests,
+                    message: message,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                })
+                    .then(function (docRef) {
+                        console.log("RSVP submitted with ID: ", docRef.id);
+                        alert("Thank you for your RSVP!");
+                        // Optionally, clear the form fields after successful submission
+                        document.getElementById('rsvpForm').reset();
+                    })
+                    .catch(function (error) {
+                        console.error("Error adding RSVP: ", error);
+                        alert("Oops! Something went wrong. Please try again.");
+                    });
+            });
+        } else {
+            document.getElementById("main").style.display = "none";
+            document.getElementById("table").style.display = "table"
+            const total = document.getElementById("total");
+            const tableBody = document.getElementById('table').getElementsByTagName('tbody')[0];
+            db.collection('rsvps').get().then(snapshot => {
+                let guests = 0
+                snapshot.docs.forEach((sd) => {
+                    const item = sd.data();
+                    guests += item.guests || 0;
+                    const row = tableBody.insertRow();
+
+                    // Insert cells and set their text content
+                    const nameCell = row.insertCell(0);
+                    nameCell.textContent = item.name;
+
+                    const guestCell = row.insertCell(1);
+                    guestCell.textContent = item.guests || 0; // Replace 'name' with your field name
+
+                    const emailCell = row.insertCell(2);
+                    emailCell.textContent = item.email || 'N/A'; // Replace 'email' with your field name
+                    
+                    const msgCell = row.insertCell(3);
+                    msgCell.textContent = item.message || 'N/A'; // Replace 'age' with your field name
+                    total.innerText = guests;
+                });
+            });
+        }
+    </script>
 </body>
 
 </html>
